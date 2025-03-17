@@ -13,17 +13,16 @@ using IChannel channel = await connection.CreateChannelAsync();
 await channel.QueueDeclareAsync(queue: "hello", true, exclusive: false, false, null);
 
 string input;
-do
+
+// 4- Mesaj Gönderme
+for(int i = 0; i < 50; i++)
 {
-    // 4- Mesaj Gönderme
-    Console.Write("Enter message (type 'exit' to quit): ");
-    input = Console.ReadLine();
-    if (!string.IsNullOrEmpty(input) && !input.Equals("exit", StringComparison.CurrentCultureIgnoreCase))
-    {
-        byte[] message = Encoding.UTF8.GetBytes(input);
-        await channel.BasicPublishAsync(exchange: "", routingKey: "example-queue", body: message);
-    }
-} while (!string.IsNullOrEmpty(input) && input.ToLower() != "exit");
+    input = $"Hello World! {i}";
+    byte[] message = Encoding.UTF8.GetBytes(input);
+    await channel.BasicPublishAsync(exchange: "", routingKey: "example-queue1", body: message);
+
+}
+
 
 // 5- Bağlantıyı Kapatma
 await channel.CloseAsync();
