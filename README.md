@@ -1,50 +1,135 @@
-# RabbitMQ Nedir?
+# RabbitMQ
 
-RabbitMQ, açık kaynak kodlu bir mesaj kuyruğu (message broker) sistemidir. AMQP (Advanced Message Queuing Protocol) protokolünü kullanarak çalışan bu sistem, dağıtık yapılar ve mikroservis mimarileri için mesaj iletimi sağlar.
+## Message Queue Nedir?
+Message Queue, yazılım sistemlerinde iletişim için kullanılan bir yapıdır. Birbirinden bağımsız sistemler arasında veri alışverişi yapmak için kullanılır. Gönderilen mesajları kuyrukta saklar ve sonradan işlenmesini sağlar.
 
-RabbitMQ, farklı bileşenlerin bağımsız çalışmasını ve birbirleriyle asenkron olarak haberleşmesini sağlar. **Kuyruk (Queue)** yapısı sayesinde mesajları geçici olarak saklar ve tüketicilere (consumers) iletir.
+- **Producer (Publisher):** Mesajları kuyruğa ekleyen bileşen.
+- **Consumer:** Kuyruktaki mesajları işleyen bileşen.
 
----
+## Message Queue'nun Amacı
+Bazı senaryolarda sistemler arası senkron haberleşmek kullanıcı deneyimi açısından uygun olmayabilir. Örneğin, bir e-ticaret uygulamasında ödeme sonrası fatura oluşturma işlemi, kullanıcıyı bekletmek yerine asenkron bir şekilde gerçekleştirilebilir.
 
-## 🛠 Ne Durumlarda Kullanılır?
+## Senkron & Asenkron İletişim
+- **Senkron:** İstek yapan sistem, yanıt alana kadar bekler.
+- **Asenkron:** İstek yapan sistem, yanıt beklemeden işlemi devam ettirir.
 
-RabbitMQ, aşağıdaki durumlarda tercih edilir:
+## Message Broker Nedir?
+Mesaj kuyruğunu yöneten ve Publisher-Consumer arasındaki iletişimi sağlayan sistemdir. Örnek teknolojiler:
+- RabbitMQ
+- Kafka
+- ActiveMQ
+- ZeroMQ
+- NSQ
 
-- **Mikroservis Mimarilerinde:** Servisler arasında asenkron iletişim sağlamak için.
-- **Yük Dengeleme (Load Balancing):** Yoğun iş yüklerini farklı tüketicilere bölerek performans iyileştirmesi yapmak için.
-- **Olay Tabanlı Mimariler (Event-Driven Architecture):** Olay bazlı sistemlerde veri akışını yönetmek için.
-- **Arkaplan İşlemleri (Background Processing):** Ağır işlemleri arka planda çalıştırmak için.
-- **Dağıtık Sistemlerde:** Farklı bileşenlerin haberleşmesini sağlamak için.
+## RabbitMQ Nedir?
+- Açık kaynaklı bir Message Queue sistemidir.
+- Erlang diliyle geliştirilmiştir.
+- Platform bağımsızdır.
+- Zengin dokümantasyona sahiptir.
+- Cloud ortamında hizmeti mevcuttur.
 
----
+## RabbitMQ Kullanım Senaryoları
+- **Ölçeklenebilirlik**: Büyük yük altındaki sistemlerde iş yükünü bölmek için kullanılır.
+- **Asenkron İşlemler**: Kullanıcıyı bekletmeden uzun süren işlemleri arka planda yapmak için uygundur.
+- **Bağımsız Servisler**: Mikroservis mimarisinde farklı servislerin haberleşmesini sağlar.
 
-## 🏷 RabbitMQ Türleri
+## Cloud AMQP
+Ücretsiz RabbitMQ ortamı oluşturmak için: [CloudAMQP](https://customer.cloudamqp.com/login)
 
-RabbitMQ, **Exchange (Değişim)** tipi ile mesajları yönlendirir. Temel **Exchange Türleri**:
+## RabbitMQ Bileşenleri
+### 1. Exchange
+Mesajları belirli kurallara göre kuyruğa yönlendirir.
 
-1. **Direct Exchange**  
-   - Belirli bir anahtar (routing key) ile mesaj yönlendirilir.
-   - **Örnek:** `direct_logs`
-   
-2. **Fanout Exchange**  
-   - Gelen mesajları, tüm bağlı kuyruklara yayınlar (broadcast).
-   - **Örnek:** `fanout_logs`
-   
-3. **Topic Exchange**  
-   - Wildcard (`*` ve `#`) ile belirli bir desene uygun mesajları yönlendirir.
-   - **Örnek:** `topic_logs`
-   
-4. **Headers Exchange**  
-   - Mesajlar, header bilgilerine göre yönlendirilir.
+### 2. Binding
+Exchange ile Queue arasında bağlantıyı kurar.
 
----
+### 3. Exchange Türleri
+#### **Direct Exchange**
+Mesajlar, belirli bir routing key'e sahip olan kuyruğa yönlendirilir. Örnek: Sipariş durumu yönetimi.
 
-## 🔧 RabbitMQ Kullanımı - Basit Kod Örnekleri
+#### **Fanout Exchange**
+Mesajlar, routing key'e bakılmaksızın tüm bağlı kuyruklara dağıtılır. Örnek: Bildirim sistemleri.
 
-### 1️⃣ RabbitMQ Sunucusunu Çalıştırma
+#### **Topic Exchange**
+Mesajlar belirli pattern'lere göre ilgili kuyruğa yönlendirilir. Örnek: Log yönetimi.
 
-Docker kullanarak RabbitMQ'yu başlatabilirsin:
+#### **Headers Exchange**
+Mesajlar, başlık bilgilerine göre ilgili kuyruğa yönlendirilir.
 
+## RabbitMQ C# Örnekleri
+### 1. RabbitMQ.Client Kütüphanesi Yükleme
 ```sh
-docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+dotnet add package RabbitMQ.Client --version 7.1.1
+```
 
+### 2. Publisher (Üretici)
+```csharp
+using System;
+using System.Text;
+using RabbitMQ.Client;
+
+class Program {
+    static void Main() {
+        var factory = new ConnectionFactory() { HostName = "localhost" };
+        using (var connection = factory.CreateConnection())
+        using (var channel = connection.CreateModel()) {
+            channel.QueueDeclare(queue: "hello",
+                                 durable: false,
+                                 exclusive: false,
+                                 autoDelete: false,
+                                 arguments: null);
+
+            string message = "Merhaba RabbitMQ!";
+            var body = Encoding.UTF8.GetBytes(message);
+
+            channel.BasicPublish(exchange: "",
+                                 routingKey: "hello",
+                                 basicProperties: null,
+                                 body: body);
+            Console.WriteLine("[x] Gönderildi: {0}", message);
+        }
+    }
+}
+```
+
+### 3. Consumer (Tüketici)
+```csharp
+using System;
+using System.Text;
+using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
+
+class Program {
+    static void Main() {
+        var factory = new ConnectionFactory() { HostName = "localhost" };
+        using (var connection = factory.CreateConnection())
+        using (var channel = connection.CreateModel()) {
+            channel.QueueDeclare(queue: "hello",
+                                 durable: false,
+                                 exclusive: false,
+                                 autoDelete: false,
+                                 arguments: null);
+
+            var consumer = new EventingBasicConsumer(channel);
+            consumer.Received += (model, ea) => {
+                var body = ea.Body.ToArray();
+                var message = Encoding.UTF8.GetString(body);
+                Console.WriteLine("[x] Alındı: {0}", message);
+            };
+            channel.BasicConsume(queue: "hello",
+                                 autoAck: true,
+                                 consumer: consumer);
+            Console.WriteLine("[*] Mesajlar bekleniyor...");
+            Console.ReadLine();
+        }
+    }
+}
+```
+
+## RabbitMQ ile Gelişmiş Kuyruk Mimarisi
+- **Round-Robin Dispatching:** Mesajlar, worker process'ler arasında eşit olarak dağıtılır.
+- **Message Acknowledgement:** Mesajın başarıyla işlendiğini doğrulamak için kullanılır.
+- **Durable Queue:** Mesajların kalıcı olması için kuyrukların dayanıklı (durable) olarak ayarlanması gerekir.
+
+## Sonuç
+RabbitMQ, ölçeklenebilir ve yüksek performanslı sistemler geliştirmek için güçlü bir mesaj kuyruğu çözümüdür. Özellikle mikroservisler, asenkron işlemler ve büyük ölçekli uygulamalar için uygundur.
