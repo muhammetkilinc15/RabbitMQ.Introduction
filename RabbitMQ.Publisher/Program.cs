@@ -9,19 +9,16 @@ factory.Uri = new("amqps://eoetypiy:O5oUx3bmcItd-i9gf9SFEtn4eDZduJyy@cow.rmq2.cl
 using IConnection connetion = await factory.CreateConnectionAsync();
 using IChannel channel = await connetion.CreateChannelAsync();
 
-await channel.ExchangeDeclareAsync(exchange: "direct-exchange", type: ExchangeType.Direct);
+// fanout exchange oluşturma
+await channel.ExchangeDeclareAsync(exchange: "fanout-exchange-example", type: ExchangeType.Fanout);
 
 // Queue Oluşturma
-while (true)
+for(int i=0;i<100; i++)
 {
-    Console.WriteLine("Bir mesaj yazınız");
-    string message = Console.ReadLine();
-    byte[] body = Encoding.UTF8.GetBytes(message);
-    await channel.BasicPublishAsync(exchange: "direct-exchange", routingKey: "direct-queue", body: body);
-
-    if (message == "exit")
-    {
-        break;
-    }
+    await Task.Delay(200);
+    byte[] body = Encoding.UTF8.GetBytes($"Hello RabbitMQ {i}");
+    await channel.BasicPublishAsync(exchange: "fanout-exchange-example", routingKey: string.Empty, body: body);
 }
+
+Console.Write("Press any key to exit...");
 Console.Read();

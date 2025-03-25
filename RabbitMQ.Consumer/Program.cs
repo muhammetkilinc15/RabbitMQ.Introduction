@@ -16,13 +16,18 @@ factory.Uri = new("amqps://eoetypiy:O5oUx3bmcItd-i9gf9SFEtn4eDZduJyy@cow.rmq2.cl
 using IConnection connetion = await factory.CreateConnectionAsync();
 using IChannel channel = await connetion.CreateChannelAsync();
 
-await channel.ExchangeDeclareAsync(exchange: "direct-exchange", type: ExchangeType.Direct);
 
-// 3- Queue Dinleme
-string queueName =  await channel.QueueDeclareAsync();
+// 3- Exchange Tanımlama
+await channel.ExchangeDeclareAsync(exchange: "fanout-exchange-example", type: ExchangeType.Fanout);
 
-// 4- Queue ile Exchange Bagla
-await channel.QueueBindAsync(queue: queueName, exchange: "direct-exchange", routingKey: "direct-queue");
+Console.Write("Kuyruk Adını Giriniz: ");
+string queueName = Console.ReadLine();
+
+// 4- Queue Tanımlama
+await channel.QueueDeclareAsync(queue: queueName, durable: false, exclusive: false, autoDelete: false, arguments: null);
+
+// 5- Queue ile Exchange Bagla
+await channel.QueueBindAsync(queue: queueName, exchange: "fanout-exchange-example", routingKey: string.Empty);
 
 
 AsyncEventingBasicConsumer consumer = new(channel);
