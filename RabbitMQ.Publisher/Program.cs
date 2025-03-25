@@ -6,23 +6,22 @@ ConnectionFactory factory = new();
 factory.Uri = new("amqps://eoetypiy:O5oUx3bmcItd-i9gf9SFEtn4eDZduJyy@cow.rmq2.cloudamqp.com/eoetypiy");
 
 // 2- Bağlantı Aktifleştirme ve Kanal Açma
-using IConnection connection = await factory.CreateConnectionAsync();
-using IChannel channel = await connection.CreateChannelAsync();
+using IConnection connetion = await factory.CreateConnectionAsync();
+using IChannel channel = await connetion.CreateChannelAsync();
 
-// 3- Kuyruk Oluşturma
-await channel.QueueDeclareAsync(queue: "hello", true, exclusive: false, false, null);
+await channel.ExchangeDeclareAsync(exchange: "direct-exchange", type: ExchangeType.Direct);
 
-string input;
-
-// 4- Mesaj Gönderme
-for(int i = 0; i < 50; i++)
+// Queue Oluşturma
+while (true)
 {
-    input = $"Hello World! {i}";
-    byte[] message = Encoding.UTF8.GetBytes(input);
-    await channel.BasicPublishAsync(exchange: "", routingKey: "example-queue1", body: message);
+    Console.WriteLine("Bir mesaj yazınız");
+    string message = Console.ReadLine();
+    byte[] body = Encoding.UTF8.GetBytes(message);
+    await channel.BasicPublishAsync(exchange: "direct-exchange", routingKey: "direct-queue", body: body);
 
+    if (message == "exit")
+    {
+        break;
+    }
 }
-
-
-// 5- Bağlantıyı Kapatma
-await channel.CloseAsync();
+Console.Read();

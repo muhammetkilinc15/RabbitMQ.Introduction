@@ -16,23 +16,24 @@ factory.Uri = new("amqps://eoetypiy:O5oUx3bmcItd-i9gf9SFEtn4eDZduJyy@cow.rmq2.cl
 using IConnection connetion = await factory.CreateConnectionAsync();
 using IChannel channel = await connetion.CreateChannelAsync();
 
-// 3- Kuyruk Dinleme
-await channel.QueueDeclareAsync(queue: "example-queue", true, exclusive: false, false, null);
+await channel.ExchangeDeclareAsync(exchange: "direct-exchange", type: ExchangeType.Direct);
 
-// 4- Mesaj Alımı
+// 3- Queue Dinleme
+string queueName =  await channel.QueueDeclareAsync();
+
+// 4- Queue ile Exchange Bagla
+await channel.QueueBindAsync(queue: queueName, exchange: "direct-exchange", routingKey: "direct-queue");
+
+
 AsyncEventingBasicConsumer consumer = new(channel);
-await channel.BasicConsumeAsync(queue: "example-queue1", autoAck: false, consumer: consumer);
-consumer.ReceivedAsync += async (sender, eventArgs) =>
+await channel.BasicConsumeAsync(queue: queueName, autoAck: true, consumer);
+
+consumer.ReceivedAsync += (sender, e) =>
 {
-    byte[] body = eventArgs.Body.ToArray();
-    string message = Encoding.UTF8.GetString(body);
-    Console.WriteLine("Gelen Mesaj: " + message);
-    await channel.BasicAckAsync(eventArgs.DeliveryTag, false);
-    await channel.BasicAckAsync(deliveryTag: eventArgs.DeliveryTag, multiple: false);
+    string message = Encoding.UTF8.GetString(e.Body.ToArray());
+    Console.WriteLine(message);
+    return Task.CompletedTask;
 };
 
-await channel.BasicConsumeAsync("example-queue", true, consumer);
 
-// 5- Bağlantıyı Kapatma
-Console.ReadLine();
-await channel.CloseAsync();
+Console.Read();
