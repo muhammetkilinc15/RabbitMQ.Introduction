@@ -18,16 +18,24 @@ using IChannel channel = await connetion.CreateChannelAsync();
 
 
 // 3- Exchange Tanımlama
-await channel.ExchangeDeclareAsync(exchange: "fanout-exchange-example", type: ExchangeType.Fanout);
+await channel.ExchangeDeclareAsync(exchange: "topic-exchange-example", type: ExchangeType.Topic);
 
-Console.Write("Kuyruk Adını Giriniz: ");
-string queueName = Console.ReadLine();
 
 // 4- Queue Tanımlama
-await channel.QueueDeclareAsync(queue: queueName, durable: false, exclusive: false, autoDelete: false, arguments: null);
+QueueDeclareOk resultQueue = await channel.QueueDeclareAsync();
+
+
+
+
+Console.Write("Dinlenecek topik: ");
+string? topic = Console.ReadLine();
+string queueName = resultQueue.QueueName;
 
 // 5- Queue ile Exchange Bagla
-await channel.QueueBindAsync(queue: queueName, exchange: "fanout-exchange-example", routingKey: string.Empty);
+await channel.QueueBindAsync(
+    queue: queueName, 
+    exchange: "topic-exchange-example", 
+    routingKey: topic!);
 
 
 AsyncEventingBasicConsumer consumer = new(channel);
@@ -35,7 +43,7 @@ await channel.BasicConsumeAsync(queue: queueName, autoAck: true, consumer);
 
 consumer.ReceivedAsync += (sender, e) =>
 {
-    string message = Encoding.UTF8.GetString(e.Body.ToArray());
+    string message = Encoding.UTF8.GetString(e.Body.Span);
     Console.WriteLine(message);
     return Task.CompletedTask;
 };
